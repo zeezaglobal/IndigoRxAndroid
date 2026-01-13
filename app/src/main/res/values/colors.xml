@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors (same in both modes) -->
+    <color name="indigo_primary">#156534</color>
+    <color name="indigo_dark">#0D4423</color>
+    <color name="indigo_light">#E8F5E9</color>
+    <color name="indigo_accent">#2E7D4A</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_hint">#9E9E9E</color>
+
+    <!-- UI Colors -->
+    <color name="background">#FAFAFA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F5F5F5</color>
+    <color name="divider">#E0E0E0</color>
+
+    <!-- Status Colors -->
+    <color name="error">#D32F2F</color>
+    <color name="success">#156534</color>
+    <color name="warning">#F57C00</color>
+    <color name="info">#1976D2</color>
+
+    <!-- Input Fields -->
+    <color name="input_background">#FFFFFF</color>
+    <color name="input_stroke">#E0E0E0</color>
+    <color name="input_stroke_focused">#156534</color>
+</resources>

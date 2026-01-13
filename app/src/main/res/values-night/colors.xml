@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors -->
+    <color name="indigo_primary">#1E8449</color>
+    <color name="indigo_dark">#156534</color>
+    <color name="indigo_light">#1B5E3A</color>
+    <color name="indigo_accent">#27AE60</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- UI Colors -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_variant">#2C2C2C</color>
+    <color name="divider">#3D3D3D</color>
+
+    <!-- Status Colors -->
+    <color name="error">#EF5350</color>
+    <color name="success">#1E8449</color>
+    <color name="warning">#FFB74D</color>
+    <color name="info">#42A5F5</color>
+</resources>
