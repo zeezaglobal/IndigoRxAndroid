@@ -1,23 +1,34 @@
-package ca.zeezaglobal.indigorx.Presentation.screens.auth
+package ca.zeezaglobal.indigorx.Presentation.screens.auth.login
 
+import android.animation.ObjectAnimator
 import android.content.Intent
-import android.net.Uri
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import android.animation.ObjectAnimator
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+
 import ca.zeezaglobal.indigorx.R
 import ca.zeezaglobal.indigorx.databinding.FragmentLoginBinding
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
+@AndroidEntryPoint
 class LoginFragment : Fragment() {
 
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
+
+    private val viewModel: LoginViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,10 +46,11 @@ class LoginFragment : Fragment() {
         playEntryAnimations()
         setupClickListeners()
         setupTextWatchers()
+        observeUiState()
+        observeNavigationEvents()
     }
 
     private fun setupInitialState() {
-        // Set initial alpha to 0 for animation
         binding.apply {
             logoSection.alpha = 0f
             tvWelcome.alpha = 0f
@@ -48,10 +60,8 @@ class LoginFragment : Fragment() {
             tvForgotPassword.alpha = 0f
             btnLogin.alpha = 0f
             dividerSection.alpha = 0f
-
             registerSection.alpha = 0f
 
-            // Set initial translation
             logoSection.translationY = -50f
             tvWelcome.translationY = 30f
             tvSubtitle.translationY = 30f
@@ -66,7 +76,6 @@ class LoginFragment : Fragment() {
         val duration = 500L
         val interpolator = DecelerateInterpolator()
 
-        // Logo animation
         binding.logoSection.animate()
             .alpha(1f)
             .translationY(0f)
@@ -74,7 +83,6 @@ class LoginFragment : Fragment() {
             .setInterpolator(interpolator)
             .start()
 
-        // Welcome text
         binding.tvWelcome.animate()
             .alpha(1f)
             .translationY(0f)
@@ -91,7 +99,6 @@ class LoginFragment : Fragment() {
             .setInterpolator(interpolator)
             .start()
 
-        // Email field slides from left
         binding.tilEmail.animate()
             .alpha(1f)
             .translationX(0f)
@@ -100,7 +107,6 @@ class LoginFragment : Fragment() {
             .setInterpolator(interpolator)
             .start()
 
-        // Password field slides from right
         binding.tilPassword.animate()
             .alpha(1f)
             .translationX(0f)
@@ -109,14 +115,12 @@ class LoginFragment : Fragment() {
             .setInterpolator(interpolator)
             .start()
 
-        // Forgot password
         binding.tvForgotPassword.animate()
             .alpha(1f)
             .setStartDelay(500)
             .setDuration(duration)
             .start()
 
-        // Login button with scale
         binding.btnLogin.animate()
             .alpha(1f)
             .scaleX(1f)
@@ -126,14 +130,12 @@ class LoginFragment : Fragment() {
             .setInterpolator(interpolator)
             .start()
 
-        // Divider and Google button
         binding.dividerSection.animate()
             .alpha(1f)
             .setStartDelay(650)
             .setDuration(duration)
             .start()
 
-        // Register section
         binding.registerSection.animate()
             .alpha(1f)
             .setStartDelay(750)
@@ -143,20 +145,23 @@ class LoginFragment : Fragment() {
 
     private fun setupClickListeners() {
         binding.btnLogin.setOnClickListener {
-            if (validateInputs()) {
-                performLogin()
+            animateButton(it) {
+                val email = binding.etEmail.text.toString().trim()
+                val password = binding.etPassword.text.toString()
+                viewModel.login(email, password)
             }
         }
 
         binding.tvForgotPassword.setOnClickListener {
             animateClickAndNavigate(it) {
                 // Navigate to forgot password
+                // findNavController().navigate(R.id.action_loginFragment_to_forgotPasswordFragment)
             }
         }
 
         binding.tvRegister.setOnClickListener {
             animateClickAndNavigate(it) {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://indigorx.me/register"))
+                val intent = Intent(Intent.ACTION_VIEW, "https://indigorx.me/register".toUri())
                 startActivity(intent)
             }
         }
@@ -165,80 +170,108 @@ class LoginFragment : Fragment() {
     private fun setupTextWatchers() {
         binding.etEmail.doAfterTextChanged {
             binding.tilEmail.error = null
+            viewModel.clearFieldErrors()
         }
 
         binding.etPassword.doAfterTextChanged {
             binding.tilPassword.error = null
+            viewModel.clearFieldErrors()
         }
     }
 
-    private fun validateInputs(): Boolean {
-        var isValid = true
-
-        val email = binding.etEmail.text.toString().trim()
-        val password = binding.etPassword.text.toString()
-
-        if (email.isEmpty()) {
-            binding.tilEmail.error = "Email is required"
-            shakeView(binding.tilEmail)
-            isValid = false
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            binding.tilEmail.error = "Invalid email format"
-            shakeView(binding.tilEmail)
-            isValid = false
-        }
-
-        if (password.isEmpty()) {
-            binding.tilPassword.error = "Password is required"
-            shakeView(binding.tilPassword)
-            isValid = false
-        } else if (password.length < 6) {
-            binding.tilPassword.error = "Password must be at least 6 characters"
-            shakeView(binding.tilPassword)
-            isValid = false
-        }
-
-        return isValid
-    }
-
-    private fun performLogin() {
-        showLoading(true)
-
-        // Animate button
-        binding.btnLogin.animate()
-            .scaleX(0.95f)
-            .scaleY(0.95f)
-            .setDuration(100)
-            .withEndAction {
-                binding.btnLogin.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(100)
-                    .start()
+    private fun observeUiState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    updateUi(state)
+                }
             }
-            .start()
+        }
+    }
 
-        // TODO: Call your login use case here
-        // For now, simulate network delay
-        binding.root.postDelayed({
-            showLoading(false)
-            // Navigate to dashboard on success
-            // findNavController().navigate(R.id.action_login_to_dashboard)
-        }, 2000)
+    private fun updateUi(state: LoginUiState) {
+        // Handle loading state
+        showLoading(state.isLoading)
+
+        // Handle field errors with shake animation
+        state.usernameError?.let { error ->
+            binding.tilEmail.error = error
+            shakeView(binding.tilEmail)
+        }
+
+        state.passwordError?.let { error ->
+            binding.tilPassword.error = error
+            shakeView(binding.tilPassword)
+        }
+
+        // Handle general errors
+        state.error?.let { errorMessage ->
+            showErrorSnackbar(errorMessage)
+            viewModel.clearError()
+        }
+    }
+
+    private fun observeNavigationEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.navigationEvent.collect { event ->
+                    when (event) {
+                        is LoginNavigationEvent.NavigateToHome -> {
+                            // Play success animation before navigating
+                            playSuccessAnimation {
+                               // findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
+                            }
+                        }
+                        is LoginNavigationEvent.NavigateToForgotPassword -> {
+                            // findNavController().navigate(R.id.action_loginFragment_to_forgotPasswordFragment)
+                        }
+                        is LoginNavigationEvent.NavigateToRegister -> {
+                            val intent = Intent(Intent.ACTION_VIEW,
+                                "https://indigorx.me/register".toUri())
+                            startActivity(intent)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun showLoading(show: Boolean) {
         binding.apply {
             progressBar.visibility = if (show) View.VISIBLE else View.GONE
             btnLogin.isEnabled = !show
-            btnLogin.text = if (show) "" else "Sign In"
+            btnLogin.text = if (show) "" else getString(R.string.login)
             etEmail.isEnabled = !show
             etPassword.isEnabled = !show
         }
     }
 
+    private fun showErrorSnackbar(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setBackgroundTint(resources.getColor(R.color.error, null))
+            .setTextColor(resources.getColor(R.color.white, null))
+            .show()
+    }
+
+    private fun playSuccessAnimation(onComplete: () -> Unit) {
+        // Scale down and fade out animation
+        binding.root.animate()
+            .alpha(0.8f)
+            .scaleX(0.95f)
+            .scaleY(0.95f)
+            .setDuration(200)
+            .withEndAction {
+                onComplete()
+            }
+            .start()
+    }
+
     private fun shakeView(view: View) {
-        val shake = ObjectAnimator.ofFloat(view, "translationX", 0f, 25f, -25f, 25f, -25f, 15f, -15f, 6f, -6f, 0f)
+        val shake = ObjectAnimator.ofFloat(
+            view,
+            "translationX",
+            0f, 25f, -25f, 25f, -25f, 15f, -15f, 6f, -6f, 0f
+        )
         shake.duration = 500
         shake.start()
     }

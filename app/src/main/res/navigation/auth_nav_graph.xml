@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/loginFragment"
-        android:name="ca.zeezaglobal.indigorx.Presentation.screens.auth.LoginFragment"
+        android:name="ca.zeezaglobal.indigorx.Presentation.screens.auth.login.LoginFragment"
         android:label="Login">
         <action
             android:id="@+id/action_login_to_register"
