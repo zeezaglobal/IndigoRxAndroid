@@ -1,12 +1,13 @@
 package ca.zeezaglobal.indigorx.Presentation.screens.auth
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.animation.ObjectAnimator
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -132,8 +133,6 @@ class LoginFragment : Fragment() {
             .setDuration(duration)
             .start()
 
-
-
         // Register section
         binding.registerSection.animate()
             .alpha(1f)
@@ -157,11 +156,10 @@ class LoginFragment : Fragment() {
 
         binding.tvRegister.setOnClickListener {
             animateClickAndNavigate(it) {
-                findNavController().navigate(R.id.action_login_to_register)
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://indigorx.me/register"))
+                startActivity(intent)
             }
         }
-
-
     }
 
     private fun setupTextWatchers() {
@@ -236,7 +234,6 @@ class LoginFragment : Fragment() {
             btnLogin.text = if (show) "" else "Sign In"
             etEmail.isEnabled = !show
             etPassword.isEnabled = !show
-
         }
     }
 
